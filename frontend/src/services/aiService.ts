@@ -50,7 +50,7 @@ class AIService {
   // Generate personalized LinkedIn messages using AI
   async generateMessage(request: AIMessageRequest): Promise<AIMessageResponse> {
     try {
-      const response = await fetch(`${this.baseURL}/api/ai/generate-message`, {
+      const response = await fetch(`${this.baseURL}/ai/generate-message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ class AIService {
     title?: string;
   }): Promise<ProspectAnalysis> {
     try {
-      const response = await fetch(`${this.baseURL}/api/ai/analyze-prospect`, {
+      const response = await fetch(`${this.baseURL}/ai/analyze-prospect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ class AIService {
     campaignGoal: string;
   }): Promise<MessageOptimization> {
     try {
-      const response = await fetch(`${this.baseURL}/api/ai/optimize-message`, {
+      const response = await fetch(`${this.baseURL}/ai/optimize-message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ class AIService {
   // Generate multiple message variations for A/B testing
   async generateMessageVariations(baseMessage: string, count: number = 3): Promise<string[]> {
     try {
-      const response = await fetch(`${this.baseURL}/api/ai/generate-variations`, {
+      const response = await fetch(`${this.baseURL}/ai/generate-variations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ class AIService {
     personalizedOpeners: string[];
   }> {
     try {
-      const response = await fetch(`${this.baseURL}/api/ai/extract-insights`, {
+      const response = await fetch(`${this.baseURL}/ai/extract-insights`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ class AIService {
     recommendations: string[];
   }> {
     try {
-      const response = await fetch(`${this.baseURL}/api/ai/predict-engagement`, {
+      const response = await fetch(`${this.baseURL}/ai/predict-engagement`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
