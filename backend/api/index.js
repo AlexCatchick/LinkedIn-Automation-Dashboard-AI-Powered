@@ -13,6 +13,12 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Log all requests for debugging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`, req.body);
+    next();
+});
+
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({
