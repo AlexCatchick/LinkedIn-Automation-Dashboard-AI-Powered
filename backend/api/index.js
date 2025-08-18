@@ -136,6 +136,34 @@ app.post('/auth/logout', (req, res) => {
     });
 });
 
+// Demo login endpoint for quick testing
+app.post('/auth/demo-login', (req, res) => {
+    try {
+        const user = {
+            id: 'demo-user-id',
+            email: 'demo@linkedin.com',
+            full_name: 'Demo User',
+            organization_id: 'demo-org-id'
+        };
+
+        const token = 'demo-jwt-token-' + Date.now();
+
+        res.json({
+            success: true,
+            data: {
+                user,
+                token
+            }
+        });
+    } catch (error) {
+        console.error('Demo login error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
+    }
+});
+
 // Mock campaigns endpoint
 app.get('/campaigns', (req, res) => {
     res.json({
