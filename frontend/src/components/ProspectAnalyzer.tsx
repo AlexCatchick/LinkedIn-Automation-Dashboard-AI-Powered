@@ -31,14 +31,12 @@ interface ProspectAnalyzerProps {
 }
 
 export const ProspectAnalyzer: React.FC<ProspectAnalyzerProps> = ({
-  prospectId,
   prospectData,
   onAnalysisComplete
 }) => {
   const [analysis, setAnalysis] = useState<ProspectAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Auto-analyze on component mount if we have prospect data
@@ -61,16 +59,6 @@ export const ProspectAnalyzer: React.FC<ProspectAnalyzerProps> = ({
     } finally {
       setIsAnalyzing(false);
     }
-  };
-
-  const toggleSection = (section: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(section)) {
-      newExpanded.delete(section);
-    } else {
-      newExpanded.add(section);
-    }
-    setExpandedSections(newExpanded);
   };
 
   const getFitScoreColor = (score: number) => {

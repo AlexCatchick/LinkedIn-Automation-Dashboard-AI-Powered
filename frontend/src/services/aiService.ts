@@ -239,7 +239,7 @@ class AIService {
     };
   }
 
-  private generateFallbackAnalysis(prospectData: any): ProspectAnalysis {
+  private generateFallbackAnalysis(_prospectData: any): ProspectAnalysis {
     return {
       fitScore: 0.75,
       keyInsights: ['Professional background matches target criteria'],
@@ -266,6 +266,66 @@ class AIService {
       variations.push(`${baseMessage} (Variation ${i + 1})`);
     }
     return variations;
+  }
+
+  // Additional methods for AICampaignBuilder
+  async generateCampaignGoals(_campaignName: string): Promise<string[]> {
+    try {
+      // In a real implementation, this would call the AI service
+      return [
+        'Increase brand awareness in the target market',
+        'Generate high-quality leads for sales team',
+        'Build relationships with industry decision makers',
+        'Establish thought leadership in the space'
+      ];
+    } catch (error) {
+      console.error('Error generating campaign goals:', error);
+      return ['Increase brand awareness', 'Generate leads', 'Build relationships'];
+    }
+  }
+
+  async refineTargetAudience(_audienceDescription: string): Promise<string[]> {
+    try {
+      // In a real implementation, this would call the AI service
+      return [
+        'C-level executives in technology companies',
+        'VP-level decision makers in mid-market companies',
+        'Directors of operations in growth-stage startups',
+        'Senior managers in enterprise organizations'
+      ];
+    } catch (error) {
+      console.error('Error refining target audience:', error);
+      return ['Decision makers', 'Industry professionals', 'Potential clients'];
+    }
+  }
+
+  async generateMessages(request: { messageType: string, tone: string, audience: string }): Promise<string[]> {
+    try {
+      // In a real implementation, this would call the AI service
+      return [
+        `Hi [Name], I noticed your work in [Industry] and thought you'd be interested in our innovative approach to [Solution].`,
+        `Hello [Name], your experience at [Company] caught my attention. I'd love to share how we're helping similar organizations.`,
+        `Hi [Name], I came across your profile and was impressed by your [Achievement]. Would you be open to a brief conversation?`
+      ];
+    } catch (error) {
+      console.error('Error generating messages:', error);
+      return this.generateFallbackMessage(request as any).suggestions;
+    }
+  }
+
+  async optimizeTiming(_campaignData: any): Promise<string[]> {
+    try {
+      // In a real implementation, this would call the AI service
+      return [
+        'Tuesday-Thursday, 9-11 AM shows highest engagement',
+        'Follow up 3-5 days after initial connection',
+        'Send reminder messages on weekdays only',
+        'Avoid sending during holidays and weekends'
+      ];
+    } catch (error) {
+      console.error('Error optimizing timing:', error);
+      return ['Weekdays 9-11 AM', 'Follow up after 3 days', 'Avoid weekends'];
+    }
   }
 }
 

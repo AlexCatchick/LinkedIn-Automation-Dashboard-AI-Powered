@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "linkedin-automation-dashboard",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -23,13 +22,5 @@
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "backend/server.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }

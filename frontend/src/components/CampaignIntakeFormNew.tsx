@@ -135,7 +135,7 @@ const CampaignIntakeFormNew: React.FC<CampaignIntakeFormProps> = ({ onComplete, 
   };
 
   // AI-powered suggestion functions
-  const generateAISuggestions = async (type: string, fieldKey: string, context?: any) => {
+  const generateAISuggestions = async (type: string, fieldKey: string) => {
     setLoadingAI(prev => ({ ...prev, [fieldKey]: true }));
     try {
       let suggestions: string[] = [];

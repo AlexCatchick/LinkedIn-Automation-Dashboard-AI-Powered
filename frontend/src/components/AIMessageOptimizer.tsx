@@ -72,12 +72,6 @@ export const AIMessageOptimizer: React.FC<AIMessageOptimizerProps> = ({
     return Math.min(100, Math.max(0, Math.round(score)));
   };
 
-  const getScoreColor = (score: number): string => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
   const getScoreBadgeColor = (score: number): string => {
     if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
     if (score >= 60) return 'bg-yellow-100 text-yellow-800 border-yellow-200';

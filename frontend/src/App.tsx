@@ -12,10 +12,7 @@ import AICampaignBuilder from './components/AICampaignBuilder';
 import { apiService } from './services/api';
 import type { User } from './types/api';
 import { 
-  Home, 
-  PlusCircle, 
   BarChart3, 
-  Users, 
   LogOut, 
   Wand2, 
   Zap, 

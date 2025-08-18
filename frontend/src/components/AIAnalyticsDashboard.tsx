@@ -27,7 +27,6 @@ interface AIInsight {
 }
 
 export const AIAnalyticsDashboard: React.FC<AIAnalyticsDashboardProps> = ({
-  campaigns = [],
   className = ''
 }) => {
   const [insights, setInsights] = useState<AIInsight[]>([]);

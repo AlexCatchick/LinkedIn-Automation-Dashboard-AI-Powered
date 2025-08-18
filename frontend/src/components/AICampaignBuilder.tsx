@@ -6,19 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Brain, 
-  Wand2, 
-  Users, 
   MessageSquare, 
   Target,
   Clock,
   TrendingUp,
   CheckCircle,
   ArrowRight,
-  Lightbulb,
-  BarChart3
+  Lightbulb
 } from 'lucide-react';
 import { aiService } from '../services/aiService';
 
@@ -107,12 +103,13 @@ export const AICampaignBuilder: React.FC<AICampaignBuilderProps> = ({
           suggestions = await aiService.generateCampaignGoals(campaignData.campaignName);
           break;
         case 2:
-          suggestions = await aiService.refineTargetAudience(campaignData.targetAudience);
+          suggestions = await aiService.refineTargetAudience(JSON.stringify(campaignData.targetAudience));
           break;
         case 3:
           suggestions = await aiService.generateMessages({
-            goal: campaignData.goal,
-            audience: campaignData.targetAudience
+            messageType: 'connection_request',
+            tone: 'professional',
+            audience: JSON.stringify(campaignData.targetAudience)
           });
           break;
         case 4:
@@ -134,7 +131,7 @@ export const AICampaignBuilder: React.FC<AICampaignBuilderProps> = ({
     setCampaignData(prev => ({
       ...prev,
       [section]: {
-        ...prev[section as keyof CampaignData],
+        ...(prev[section as keyof CampaignData] as object || {}),
         [field]: value
       }
     }));
