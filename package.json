@@ -1,0 +1,36 @@
+{
+  "name": "linkedin-automation",
+  "version": "1.0.0",
+  "description": "AI-powered LinkedIn sales automation platform",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "worker"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\" \"npm run worker\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "worker": "cd worker && npm run dev",
+    "build": "cd frontend && npm run build",
+    "install:all": "npm install && npm run install:backend && npm run install:frontend && npm run install:worker",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:worker": "cd worker && npm install",
+    "migrate": "cd backend && npm run migrate",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "author": "LinkedIn Automation Team",
+  "license": "MIT"
+}
