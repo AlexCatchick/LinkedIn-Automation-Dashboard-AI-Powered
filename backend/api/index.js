@@ -32,7 +32,7 @@ app.get('/health', (req, res) => {
 });
 
 // Simple auth endpoints for testing
-app.post('/auth/login', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -69,7 +69,7 @@ app.post('/auth/login', async (req, res) => {
     }
 });
 
-app.post('/auth/register', async (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
     try {
         const { email, password, fullName } = req.body;
 
@@ -98,7 +98,7 @@ app.post('/auth/register', async (req, res) => {
     }
 });
 
-app.get('/auth/me', (req, res) => {
+app.get('/api/auth/me', (req, res) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -129,7 +129,7 @@ app.get('/auth/me', (req, res) => {
     }
 });
 
-app.post('/auth/logout', (req, res) => {
+app.post('/api/auth/logout', (req, res) => {
     res.json({
         success: true,
         message: 'Logged out successfully'
@@ -137,7 +137,7 @@ app.post('/auth/logout', (req, res) => {
 });
 
 // Demo login endpoint for quick testing
-app.post('/auth/demo-login', (req, res) => {
+app.post('/api/auth/demo-login', (req, res) => {
     try {
         const user = {
             id: 'demo-user-id',
@@ -165,14 +165,14 @@ app.post('/auth/demo-login', (req, res) => {
 });
 
 // Mock campaigns endpoint
-app.get('/campaigns', (req, res) => {
+app.get('/api/campaigns', (req, res) => {
     res.json({
         success: true,
         data: []
     });
 });
 
-app.post('/campaigns', (req, res) => {
+app.post('/api/campaigns', (req, res) => {
     const campaign = {
         id: 'campaign-' + Date.now(),
         name: req.body.name || 'New Campaign',
@@ -187,7 +187,7 @@ app.post('/campaigns', (req, res) => {
 });
 
 // Mock AI endpoints
-app.post('/ai/generate-message', (req, res) => {
+app.post('/api/ai/generate-message', (req, res) => {
     res.json({
         success: true,
         data: {
@@ -199,7 +199,7 @@ app.post('/ai/generate-message', (req, res) => {
     });
 });
 
-app.post('/ai/analyze-prospect', (req, res) => {
+app.post('/api/ai/analyze-prospect', (req, res) => {
     res.json({
         success: true,
         data: {
@@ -213,7 +213,7 @@ app.post('/ai/analyze-prospect', (req, res) => {
     });
 });
 
-app.post('/ai/optimize-message', (req, res) => {
+app.post('/api/ai/optimize-message', (req, res) => {
     const { message } = req.body;
     res.json({
         success: true,
