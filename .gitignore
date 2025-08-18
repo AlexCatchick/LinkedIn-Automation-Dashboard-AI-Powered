@@ -15,6 +15,10 @@ frontend/build/
 .env.test.local
 .env.production.local
 
+# Environment setup scripts (contain sensitive data)
+setup-vercel-env.ps1
+setup-vercel-env.sh
+
 # IDE
 .vscode/
 .idea/
