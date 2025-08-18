@@ -21,7 +21,11 @@ class ApiService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // Use the current domain for API calls when deployed, localhost for development
+    const isDevelopment = import.meta.env.MODE === 'development';
+    this.baseURL = isDevelopment 
+      ? 'http://localhost:3001/api' 
+      : `${window.location.origin}/api`;
     
     this.api = axios.create({
       baseURL: this.baseURL,
@@ -33,7 +37,7 @@ class ApiService {
     // Add request interceptor to include auth token
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('token'); // Fixed: use 'token' not 'auth_token'
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -47,7 +51,7 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem('token'); // Fixed: use 'token' not 'auth_token'
           window.location.href = '/login';
         }
         return Promise.reject(error);
@@ -57,27 +61,27 @@ class ApiService {
 
   // Authentication
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/login', credentials);
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token);
+    const response: AxiosResponse<ApiResponse<AuthResponse>> = await this.api.post('/auth/login', credentials);
+    if (response.data.data?.token) {
+      localStorage.setItem('token', response.data.data.token);
     }
-    return response.data;
+    return response.data.data!;
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/register', userData);
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token);
+    const response: AxiosResponse<ApiResponse<AuthResponse>> = await this.api.post('/auth/register', userData);
+    if (response.data.data?.token) {
+      localStorage.setItem('token', response.data.data.token);
     }
-    return response.data;
+    return response.data.data!;
   }
 
   async demoLogin(): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/demo-login', {});
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token);
+    const response: AxiosResponse<ApiResponse<AuthResponse>> = await this.api.post('/auth/demo-login', {});
+    if (response.data.data?.token) {
+      localStorage.setItem('token', response.data.data.token);
     }
-    return response.data;
+    return response.data.data!;
   }
 
   async logout(): Promise<void> {

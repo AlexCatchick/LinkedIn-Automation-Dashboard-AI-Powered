@@ -3,44 +3,88 @@ const cors = require('cors');
 
 const app = express();
 
-// Simple CORS configuration for Vercel
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
+// Production-ready CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = [
+            'http://localhost:5173',
+            'http://localhost:3000',
+            /^https:\/\/.*\.vercel\.app$/,
+            /^https:\/\/linked-in-automation-dashboard-ai-powered.*\.vercel\.app$/
+        ];
+
+        const isAllowed = allowedOrigins.some(pattern => {
+            if (typeof pattern === 'string') {
+                return pattern === origin;
+            } else {
+                return pattern.test(origin);
+            }
+        });
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Log all requests for debugging
+// Request logging for production debugging
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`, req.body);
+    const timestamp = new Date().toISOString();
+    console.log(`${timestamp} ${req.method} ${req.path} - Origin: ${req.get('Origin') || 'none'}`);
     next();
 });
 
-// Simple in-memory user store (for demo purposes)
+// Environment configuration
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Enhanced in-memory user store (for demo purposes - in production use real database)
 const users = new Map();
 const tokens = new Map();
 
 // Pre-populate with demo user
-users.set('demo@linkedin.com', {
+const demoUser = {
     id: 'demo-user-id',
-    email: 'demo@linkedin.com',
-    password: 'demo123',
+    email: process.env.LINKEDIN_EMAIL || 'demo@linkedin.com',
+    password: process.env.LINKEDIN_PASSWORD || 'demo123',
     full_name: 'Demo User',
     organization_id: 'demo-org-id'
-});
+};
 
-// Helper function to generate simple tokens
+users.set(demoUser.email, demoUser);
+
+// Enhanced token management
 function generateToken(userId) {
-    const token = 'token-' + userId + '-' + Date.now();
-    return token;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2);
+    return `token-${userId}-${timestamp}-${random}`;
 }
 
-// Helper function to validate token
 function validateToken(token) {
-    return tokens.get(token);
+    const user = tokens.get(token);
+    if (!user) return null;
+
+    // Token expiry (24 hours for demo)
+    const tokenAge = Date.now() - parseInt(token.split('-')[2]);
+    if (tokenAge > 24 * 60 * 60 * 1000) {
+        tokens.delete(token);
+        return null;
+    }
+
+    return user;
 }
 
 // Health check endpoint
@@ -229,7 +273,7 @@ app.post('/api/auth/logout', (req, res) => {
 app.post('/api/auth/demo-login', (req, res) => {
     try {
         const user = users.get('demo@linkedin.com');
-        
+
         if (!user) {
             return res.status(500).json({
                 success: false,

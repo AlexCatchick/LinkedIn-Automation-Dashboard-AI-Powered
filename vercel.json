@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "linkedin-automation-dashboard",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -10,10 +11,17 @@
     },
     {
       "src": "backend/api/index.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 30
+      }
     }
   ],
   "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/backend/api/index.js"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/backend/api/index.js"
@@ -23,8 +31,20 @@
       "dest": "/frontend/assets/$1"
     },
     {
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "dest": "/frontend/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/frontend/index.html"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "backend/api/index.js": {
+      "maxDuration": 30
+    }
+  }
 }
