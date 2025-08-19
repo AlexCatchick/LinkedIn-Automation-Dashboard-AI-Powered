@@ -5,24 +5,22 @@
   "main": "index.js",
   "private": true,
   "workspaces": [
-    "backend",
     "frontend",
-    "worker"
+    "worker",
+    "api"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run backend\" \"npm run frontend\" \"npm run worker\"",
-    "backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run api\" \"npm run frontend\" \"npm run worker\"",
+    "api": "cd api && node index.js",
     "frontend": "cd frontend && npm start",
     "worker": "cd worker && npm run dev",
     "build": "cd frontend && npm run build",
     "vercel-build": "cd frontend && npm install && npm run build",
-    "install:all": "npm install && npm run install:backend && npm run install:frontend && npm run install:worker",
-    "install:backend": "cd backend && npm install",
+    "install:all": "npm install && npm run install:api && npm run install:frontend && npm run install:worker",
+    "install:api": "cd api && npm install",
     "install:frontend": "cd frontend && npm install",
     "install:worker": "cd worker && npm install",
-    "migrate": "cd backend && npm run migrate",
-    "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "cd backend && npm test",
+    "test": "npm run test:frontend",
     "test:frontend": "cd frontend && npm test"
   },
   "devDependencies": {
