@@ -177,7 +177,7 @@ function App() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-gray-700">
                   <UserCircle className="h-5 w-5" />
-                  <span>Welcome, {user.full_name}</span>
+                  <span>Welcome, {user.firstName} {user.lastName}</span>
                 </div>
                 <Button
                   variant="outline"

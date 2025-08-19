@@ -54,10 +54,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
   const registerForm = useForm<RegisterRequest>({
     defaultValues: {
-      full_name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
-      organization_name: ''
+      company: '',
+      position: ''
     }
   });
 
@@ -212,13 +214,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             <form onSubmit={registerForm.handleSubmit(handleRegister)}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Controller
-                  name="full_name"
+                  name="firstName"
                   control={registerForm.control}
-                  rules={{ required: 'Full name is required' }}
+                  rules={{ required: 'First name is required' }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
-                      label="Full Name"
+                      label="First Name"
+                      fullWidth
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      disabled={loading}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="lastName"
+                  control={registerForm.control}
+                  rules={{ required: 'Last name is required' }}
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      label="Last Name"
                       fullWidth
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
@@ -274,12 +292,25 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 />
 
                 <Controller
-                  name="organization_name"
+                  name="company"
                   control={registerForm.control}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Organization Name (Optional)"
+                      label="Company (Optional)"
+                      fullWidth
+                      disabled={loading}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="position"
+                  control={registerForm.control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Position (Optional)"
                       fullWidth
                       disabled={loading}
                     />

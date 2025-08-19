@@ -1,22 +1,23 @@
+// Load environment variables
+require('dotenv').config({ path: '../.env' });
+
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const userService = require('./services/userService');
 
 const app = express();
 
-// Simple in-memory user store for demo
-const users = [
-    {
-        id: 1,
-        email: 'demo@linkedin.com',
-        password: '$2a$10$V8EJo9lJn5h5JvNJ5l5XfOQ5.qH5XzB5Y5H5o5h5j5v5n5j5l5XfO', // hashed 'demo123'
-        firstName: 'Demo',
-        lastName: 'User',
-        company: 'Demo Company',
-        position: 'Sales Manager'
+// Initialize database on startup
+(async () => {
+    console.log('🚀 Starting LinkedIn Automation API...');
+    const dbInitialized = await userService.initializeDatabase();
+    if (dbInitialized) {
+        console.log('✅ Database initialized successfully');
+    } else {
+        console.log('⚠️  Running in fallback mode');
     }
-];
+})();
 
 // CORS configuration
 const corsOptions = {
@@ -55,7 +56,7 @@ const generateToken = (user) => {
     return jwt.sign(
         { id: user.id, email: user.email },
         process.env.JWT_SECRET || 'fallback-secret-key',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+        { expiresIn: '7d' }
     );
 };
 
@@ -90,24 +91,40 @@ app.get('/', (req, res) => {
     });
 });
 
+// Debug endpoint to check database status
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        // Try to get users from database
+        const testQuery = 'SELECT COUNT(*) as user_count FROM users';
+        const db = require('./database');
+        const result = await db.query(testQuery);
+
+        res.json({
+            database: 'connected',
+            userCount: parseInt(result.rows[0].user_count),
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.json({
+            database: 'not_connected',
+            error: error.message,
+            fallback: 'using in-memory storage',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Demo login endpoint
 app.post('/api/auth/demo-login', async (req, res) => {
     try {
-        const demoUser = users.find(u => u.email === 'demo@linkedin.com');
-        if (!demoUser) {
-            return res.status(404).json({
-                success: false,
-                error: 'Demo user not found'
-            });
-        }
-
+        const demoUser = await userService.getDemoUser();
         const token = generateToken(demoUser);
 
         res.json({
             success: true,
             data: {
                 token,
-                user: formatUserResponse(demoUser)
+                user: demoUser
             }
         });
     } catch (error) {
@@ -123,37 +140,45 @@ app.post('/api/auth/demo-login', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log('Login attempt for email:', email);
 
         if (!email || !password) {
+            console.log('Missing email or password');
             return res.status(400).json({
                 success: false,
                 error: 'Email and password are required'
             });
         }
 
-        const user = users.find(u => u.email === email);
+        const user = await userService.findUserByEmail(email);
         if (!user) {
+            console.log('User not found:', email);
             return res.status(401).json({
                 success: false,
                 error: 'Invalid credentials'
             });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log('User found, checking password...');
+        const isPasswordValid = await userService.validatePassword(password, user.password_hash);
         if (!isPasswordValid) {
+            console.log('Invalid password for user:', email);
             return res.status(401).json({
                 success: false,
                 error: 'Invalid credentials'
             });
         }
 
-        const token = generateToken(user);
+        console.log('Password valid, generating token...');
+        const formattedUser = userService.formatUser(user);
+        const token = generateToken(formattedUser);
+        console.log('Login successful for user:', email);
 
         res.json({
             success: true,
             data: {
                 token,
-                user: formatUserResponse(user)
+                user: formattedUser
             }
         });
     } catch (error) {
@@ -165,7 +190,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Register endpoint (simplified for demo)
+// Register endpoint
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { email, password, firstName, lastName, company, position } = req.body;
@@ -177,42 +202,35 @@ app.post('/api/auth/register', async (req, res) => {
             });
         }
 
-        // Check if user already exists
-        const existingUser = users.find(u => u.email === email);
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                error: 'User already exists'
-            });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new user
-        const newUser = {
-            id: users.length + 1,
+        const newUser = await userService.createUser({
             email,
-            password: hashedPassword,
+            password,
             firstName,
             lastName,
             company: company || '',
             position: position || ''
-        };
+        });
 
-        users.push(newUser);
-
-        const token = generateToken(newUser);
+        const formattedUser = userService.formatUser(newUser);
+        const token = generateToken(formattedUser);
 
         res.status(201).json({
             success: true,
             data: {
                 token,
-                user: formatUserResponse(newUser)
+                user: formattedUser
             }
         });
     } catch (error) {
         console.error('Register error:', error);
+
+        if (error.message === 'User with this email already exists') {
+            return res.status(409).json({
+                success: false,
+                error: error.message
+            });
+        }
+
         res.status(500).json({
             success: false,
             error: 'Registration failed'
@@ -237,6 +255,16 @@ app.use((err, req, res, next) => {
         error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
     });
 });
+
+// Start server (for local development)
+if (require.main === module) {
+    const PORT = process.env.PORT || 3001;
+    app.listen(PORT, () => {
+        console.log(`🎯 Server running on port ${PORT}`);
+        console.log(`📍 Health check: http://localhost:${PORT}/health`);
+        console.log(`🔐 Demo login: http://localhost:${PORT}/api/auth/demo-login`);
+    });
+}
 
 // Export for Vercel
 module.exports = app;

@@ -3,10 +3,13 @@
 export interface User {
   id: string;
   email: string;
-  full_name: string;
+  firstName: string;
+  lastName: string;
+  company?: string;
+  position?: string;
   organization_id?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Organization {
@@ -60,7 +63,8 @@ export interface Prospect {
   id: string;
   campaign_id: string;
   linkedin_url: string;
-  full_name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   title?: string;
   company?: string;
@@ -172,10 +176,12 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  full_name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-  organization_name?: string;
+  company?: string;
+  position?: string;
 }
 
 export interface AuthResponse {

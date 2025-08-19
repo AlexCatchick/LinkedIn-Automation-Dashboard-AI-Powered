@@ -26,10 +26,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
   const registerForm = useForm<RegisterRequest>({
     defaultValues: {
-      full_name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
-      organization_name: ''
+      company: '',
+      position: ''
     }
   });
 
@@ -184,17 +186,41 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
               <TabsContent value="register" className="space-y-4">
                 <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name</Label>
+                    <Label htmlFor="firstName">First Name</Label>
                     <Controller
-                      name="full_name"
+                      name="firstName"
                       control={registerForm.control}
-                      rules={{ required: 'Full name is required' }}
+                      rules={{ required: 'First name is required' }}
                       render={({ field, fieldState }) => (
                         <div>
                           <Input
                             {...field}
-                            id="full_name"
-                            placeholder="Enter your full name"
+                            id="firstName"
+                            placeholder="Enter your first name"
+                            disabled={loading}
+                          />
+                          {fieldState.error && (
+                            <p className="text-sm text-red-600 mt-1">
+                              {fieldState.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Controller
+                      name="lastName"
+                      control={registerForm.control}
+                      rules={{ required: 'Last name is required' }}
+                      render={({ field, fieldState }) => (
+                        <div>
+                          <Input
+                            {...field}
+                            id="lastName"
+                            placeholder="Enter your last name"
                             disabled={loading}
                           />
                           {fieldState.error && (
@@ -270,15 +296,31 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="organization_name">Organization (Optional)</Label>
+                    <Label htmlFor="company">Company (Optional)</Label>
                     <Controller
-                      name="organization_name"
+                      name="company"
                       control={registerForm.control}
                       render={({ field }) => (
                         <Input
                           {...field}
-                          id="organization_name"
-                          placeholder="Enter your organization name"
+                          id="company"
+                          placeholder="Enter your company name"
+                          disabled={loading}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="position">Position (Optional)</Label>
+                    <Controller
+                      name="position"
+                      control={registerForm.control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          id="position"
+                          placeholder="Enter your position"
                           disabled={loading}
                         />
                       )}
