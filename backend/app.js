@@ -1,84 +1,41 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 
 const app = express();
 
-// Security middleware
-app.use(helmet({
-    crossOriginEmbedderPolicy: false,
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https:"],
-            fontSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-        },
-    },
-}));
-
-// CORS configuration - more permissive for development
+// Production-ready CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:5174').split(',');
-
         // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
 
-        // In development, be more permissive
-        if (process.env.NODE_ENV === 'development') {
-            // Allow localhost origins on any port
-            if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-                return callback(null, true);
+        const allowedOrigins = [
+            'http://localhost:5173',
+            'http://localhost:3000',
+            /^https:\/\/.*\.vercel\.app$/,
+            /^https:\/\/linked-in-automation-dashboard-ai-powered.*\.vercel\.app$/
+        ];
+
+        const isAllowed = allowedOrigins.some(pattern => {
+            if (typeof pattern === 'string') {
+                return pattern === origin;
+            } else {
+                return pattern.test(origin);
             }
-        }
+        });
 
-        // Allow Vercel origins
-        if (origin.includes('.vercel.app') || origin.includes('vercel.app')) {
-            return callback(null, true);
-        }
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (isAllowed) {
             callback(null, true);
         } else {
-            console.log(`CORS blocked origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 200
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
-
-// Rate limiting - more permissive in development
-const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000), // 1 minute in dev, 15 minutes in prod
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100), // 1000 requests in dev, 100 in prod
-    message: {
-        error: 'Too many requests from this IP, please try again later.'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => {
-        // Skip rate limiting for health checks in development
-        if (process.env.NODE_ENV === 'development' && req.path === '/health') {
-            return true;
-        }
-        return false;
-    }
-});
-
-app.use(limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -426,89 +383,14 @@ app.post('/api/ai/optimize-message', (req, res) => {
     });
 });
 
-// Mock AI endpoints
-app.post('/api/ai/generate-message', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            generatedMessage: "Hi [Name], I noticed your work in [Industry] and thought you'd be interested in our innovative approach to [Solution].",
-            confidence: 0.85,
-            suggestions: ['Add more personalization', 'Include specific value proposition'],
-            personalizedElements: ['Name', 'Industry', 'Solution']
-        }
-    });
-});
-
-app.post('/api/ai/analyze-prospect', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            fitScore: 0.78,
-            keyInsights: ['Professional background matches target criteria'],
-            recommendedApproach: 'Professional and value-focused outreach',
-            personalizedHooks: ['Industry experience', 'Company background'],
-            industryTrends: ['Digital transformation', 'Remote work adaptation'],
-            connectionStrategy: 'Lead with industry insights and mutual value'
-        }
-    });
-});
-
-app.post('/api/ai/optimize-message', (req, res) => {
-    const { message } = req.body;
-    res.json({
-        success: true,
-        data: {
-            originalMessage: message,
-            optimizedMessage: message + ' [AI Optimized]',
-            improvements: ['Added more personalization', 'Improved call-to-action'],
-            engagementPrediction: 0.75,
-            tone: 'professional'
-        }
-    });
-});
-
-// API status endpoint
-app.get('/api', (req, res) => {
-    res.json({
-        message: 'LinkedIn Automation API is running',
-        version: '1.0.0',
-        timestamp: new Date().toISOString(),
-        status: 'operational',
-        endpoints: {
-            authentication: '/api/auth',
-            campaigns: '/api/campaigns',
-            prospects: '/api/prospects',
-            messages: '/api/messages',
-            sequences: '/api/sequences',
-            events: '/api/events',
-            analytics: '/api/analytics'
-        },
-        health: '/health'
-    });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({
-        error: 'Route not found',
-        message: `Cannot ${req.method} ${req.originalUrl}`
-    });
-});
-
-// Global error handler
+// Catch-all error handler
 app.use((err, req, res, next) => {
-    console.error('Global error:', err);
-
-    if (err.message === 'Not allowed by CORS') {
-        return res.status(403).json({ error: 'CORS policy violation' });
-    }
-
-    res.status(err.status || 500).json({
-        error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
-        stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
+    console.error('Unhandled error:', err);
+    res.status(500).json({
+        success: false,
+        error: 'Internal server error'
     });
 });
 
-// 🚨 IMPORTANT: no app.listen() for Vercel
-// Instead export the handler for Vercel
-module.exports = app;
+// // Export for Vercel
+// module.exports = app;
