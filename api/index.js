@@ -94,6 +94,23 @@ app.get('/', (req, res) => {
 });
 
 // Debug endpoint to check database status
+app.get('/api/debug/env', async (req, res) => {
+    try {
+        res.json({
+            hasDatabase: !!process.env.DATABASE_URL,
+            hasJWT: !!process.env.JWT_SECRET,
+            nodeEnv: process.env.NODE_ENV || 'undefined',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.json({
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Debug endpoint to check database status
 app.get('/api/debug/users', async (req, res) => {
     try {
         // Try to get users from database
