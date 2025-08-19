@@ -110,6 +110,24 @@ app.get('/api/debug/env', async (req, res) => {
     }
 });
 
+// Debug endpoint to check environment status
+app.get('/api/debug/status', async (req, res) => {
+    try {
+        res.json({
+            hasDatabase: !!process.env.DATABASE_URL,
+            hasJWT: !!process.env.JWT_SECRET,
+            nodeEnv: process.env.NODE_ENV || 'undefined',
+            databasePrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'none',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.json({
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Debug endpoint to check database status
 app.get('/api/debug/users', async (req, res) => {
     try {

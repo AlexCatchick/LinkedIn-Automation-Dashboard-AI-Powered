@@ -43,7 +43,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       const response = await apiService.login(data);
       onLogin(response.user);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Login failed';
+      setError(String(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -57,7 +59,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       const response = await apiService.register(data);
       onLogin(response.user);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
+      console.error('Register error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Registration failed';
+      setError(String(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -71,7 +75,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       const response = await apiService.demoLogin();
       onLogin(response.user);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Demo login failed');
+      console.error('Demo login error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Demo login failed';
+      setError(String(errorMessage));
     } finally {
       setLoading(false);
     }
