@@ -4,7 +4,7 @@
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
-      "config": { 
+      "config": {
         "distDir": "dist"
       }
     },
@@ -21,6 +21,10 @@
     {
       "src": "/health",
       "dest": "/backend/api/index.js"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/frontend/dist/$1"
     },
     {
       "src": "/(.*)",
