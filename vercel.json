@@ -10,7 +10,12 @@
     },
     {
       "src": "backend/api/index.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "backend/**"
+        ]
+      }
     }
   ],
   "routes": [
@@ -30,5 +35,8 @@
       "src": "/(.*)",
       "dest": "/frontend/dist/index.html"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
