@@ -78,8 +78,10 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
     res.json({
         name: 'LinkedIn Automation API',
-        version: '1.0.0',
+        version: '1.0.1',
         status: 'running',
+        database: 'supabase-connected',
+        lastUpdated: '2025-08-19T09:06:00Z',
         endpoints: {
             health: '/health',
             auth: {
