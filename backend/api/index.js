@@ -6,6 +6,25 @@ require('dotenv').config();
 
 const app = express();
 
+// Initialize database
+const { testConnection, initializeDatabase } = require('../config/database');
+
+// Initialize database on startup
+(async () => {
+    try {
+        console.log('🔧 Starting database initialization...');
+        const isConnected = await testConnection();
+        if (isConnected) {
+            await initializeDatabase();
+            console.log('✅ Database initialized successfully');
+        } else {
+            console.error('❌ Database connection failed - some features may not work');
+        }
+    } catch (error) {
+        console.error('❌ Database initialization error:', error);
+    }
+})();
+
 // Security middleware
 app.use(helmet({
     crossOriginEmbedderPolicy: false,
@@ -24,7 +43,7 @@ app.use(helmet({
     },
 }));
 
-// CORS configuration - more permissive for development
+// CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:5174').split(',');
@@ -34,7 +53,6 @@ const corsOptions = {
 
         // In development, be more permissive
         if (process.env.NODE_ENV === 'development') {
-            // Allow localhost origins on any port
             if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
                 return callback(null, true);
             }
@@ -60,17 +78,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Rate limiting - more permissive in development
+// Rate limiting
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000), // 1 minute in dev, 15 minutes in prod
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100), // 1000 requests in dev, 100 in prod
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000),
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100),
     message: {
         error: 'Too many requests from this IP, please try again later.'
     },
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-        // Skip rate limiting for health checks in development
         if (process.env.NODE_ENV === 'development' && req.path === '/health') {
             return true;
         }
@@ -84,67 +101,14 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging for production debugging
+// Request logging
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
     console.log(`${timestamp} ${req.method} ${req.path} - Origin: ${req.get('Origin') || 'none'}`);
     next();
 });
 
-// Environment configuration
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Enhanced in-memory user store (for demo purposes - in production use real database)
-const users = new Map();
-const tokens = new Map();
-
-// Pre-populate with demo user
-const demoUser = {
-    id: 'demo-user-id',
-    email: process.env.LINKEDIN_EMAIL || 'demo@linkedin.com',
-    password: process.env.LINKEDIN_PASSWORD || 'demo123',
-    full_name: 'Demo User',
-    organization_id: 'demo-org-id',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-};
-
-users.set(demoUser.email, demoUser);
-
-// Enhanced token management
-function generateToken(userId) {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2);
-    return `token-${userId}-${timestamp}-${random}`;
-}
-
-function validateToken(token) {
-    const user = tokens.get(token);
-    if (!user) return null;
-
-    // Token expiry (24 hours for demo)
-    const tokenAge = Date.now() - parseInt(token.split('-')[2]);
-    if (tokenAge > 24 * 60 * 60 * 1000) {
-        tokens.delete(token);
-        return null;
-    }
-
-    return user;
-}
-
-// Helper function to format user response
-function formatUserResponse(user) {
-    return {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        organization_id: user.organization_id,
-        created_at: user.created_at || new Date().toISOString(),
-        updated_at: user.updated_at || new Date().toISOString()
-    };
-}
-
-// Health check endpoint
+// Health check endpoints
 app.get('/', (req, res) => {
     res.json({
         message: 'LinkedIn Automation API is running',
@@ -159,311 +123,6 @@ app.get('/health', (req, res) => {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'production'
-    });
-});
-
-// Simple auth endpoints for testing
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Check if user exists
-        const user = users.get(email);
-        if (!user || user.password !== password) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
-        }
-
-        // Generate token
-        const token = generateToken(user.id);
-        tokens.set(token, user);
-
-        // Return user data without password
-        const userResponse = formatUserResponse(user);
-
-        res.json({
-            success: true,
-            data: {
-                token,
-                user: userResponse
-            }
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
-
-app.post('/api/auth/register', async (req, res) => {
-    try {
-        const { email, password, full_name, organization_name } = req.body;
-
-        // Check if user already exists
-        if (users.has(email)) {
-            return res.status(400).json({
-                success: false,
-                error: 'User already exists with this email'
-            });
-        }
-
-        // Validate input
-        if (!email || !password || !full_name) {
-            return res.status(400).json({
-                success: false,
-                error: 'Email, password, and full name are required'
-            });
-        }
-
-        // Create new user
-        const user = {
-            id: 'user-' + Date.now(),
-            email,
-            password,
-            full_name,
-            organization_id: organization_name ? 'org-' + Date.now() : null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-
-        // Store user
-        users.set(email, user);
-
-        // Generate token
-        const token = generateToken(user.id);
-        tokens.set(token, user);
-
-        // Return user data without password
-        const userResponse = {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            organization_id: user.organization_id
-        };
-
-        res.json({
-            success: true,
-            data: {
-                token,
-                user: userResponse
-            }
-        });
-    } catch (error) {
-        console.error('Register error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
-
-app.get('/api/auth/me', (req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
-                success: false,
-                error: 'No valid token provided'
-            });
-        }
-
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-        const user = validateToken(token);
-
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid or expired token'
-            });
-        }
-
-        // Return user data without password
-        const userResponse = {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            organization_id: user.organization_id
-        };
-
-        res.json({
-            success: true,
-            data: userResponse
-        });
-    } catch (error) {
-        console.error('Auth check error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
-
-app.post('/api/auth/logout', (req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7);
-            tokens.delete(token); // Invalidate the token
-        }
-
-        res.json({
-            success: true,
-            message: 'Logged out successfully'
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
-
-// Demo login endpoint for quick testing
-app.post('/api/auth/demo-login', (req, res) => {
-    try {
-        const user = users.get('demo@linkedin.com');
-
-        if (!user) {
-            return res.status(500).json({
-                success: false,
-                error: 'Demo user not found'
-            });
-        }
-
-        // Generate token
-        const token = generateToken(user.id);
-        tokens.set(token, user);
-
-        // Return user data without password
-        const userResponse = {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            organization_id: user.organization_id
-        };
-
-        res.json({
-            success: true,
-            data: {
-                token,
-                user: userResponse
-            }
-        });
-    } catch (error) {
-        console.error('Demo login error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
-
-// Mock campaigns endpoint
-app.get('/api/campaigns', (req, res) => {
-    res.json({
-        success: true,
-        data: []
-    });
-});
-
-app.post('/api/campaigns', (req, res) => {
-    const campaign = {
-        id: 'campaign-' + Date.now(),
-        name: req.body.name || 'New Campaign',
-        status: 'draft',
-        created_at: new Date().toISOString()
-    };
-
-    res.json({
-        success: true,
-        data: campaign
-    });
-});
-
-// Mock AI endpoints
-app.post('/api/ai/generate-message', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            generatedMessage: "Hi [Name], I noticed your work in [Industry] and thought you'd be interested in our innovative approach to [Solution].",
-            confidence: 0.85,
-            suggestions: ['Add more personalization', 'Include specific value proposition'],
-            personalizedElements: ['Name', 'Industry', 'Solution']
-        }
-    });
-});
-
-app.post('/api/ai/analyze-prospect', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            fitScore: 0.78,
-            keyInsights: ['Professional background matches target criteria'],
-            recommendedApproach: 'Professional and value-focused outreach',
-            personalizedHooks: ['Industry experience', 'Company background'],
-            industryTrends: ['Digital transformation', 'Remote work adaptation'],
-            connectionStrategy: 'Lead with industry insights and mutual value'
-        }
-    });
-});
-
-app.post('/api/ai/optimize-message', (req, res) => {
-    const { message } = req.body;
-    res.json({
-        success: true,
-        data: {
-            originalMessage: message,
-            optimizedMessage: message + ' [AI Optimized]',
-            improvements: ['Added more personalization', 'Improved call-to-action'],
-            engagementPrediction: 0.75,
-            tone: 'professional'
-        }
-    });
-});
-
-// Mock AI endpoints
-app.post('/api/ai/generate-message', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            generatedMessage: "Hi [Name], I noticed your work in [Industry] and thought you'd be interested in our innovative approach to [Solution].",
-            confidence: 0.85,
-            suggestions: ['Add more personalization', 'Include specific value proposition'],
-            personalizedElements: ['Name', 'Industry', 'Solution']
-        }
-    });
-});
-
-app.post('/api/ai/analyze-prospect', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            fitScore: 0.78,
-            keyInsights: ['Professional background matches target criteria'],
-            recommendedApproach: 'Professional and value-focused outreach',
-            personalizedHooks: ['Industry experience', 'Company background'],
-            industryTrends: ['Digital transformation', 'Remote work adaptation'],
-            connectionStrategy: 'Lead with industry insights and mutual value'
-        }
-    });
-});
-
-app.post('/api/ai/optimize-message', (req, res) => {
-    const { message } = req.body;
-    res.json({
-        success: true,
-        data: {
-            originalMessage: message,
-            optimizedMessage: message + ' [AI Optimized]',
-            improvements: ['Added more personalization', 'Improved call-to-action'],
-            engagementPrediction: 0.75,
-            tone: 'professional'
-        }
     });
 });
 
@@ -487,6 +146,16 @@ app.get('/api', (req, res) => {
     });
 });
 
+// Import and use routes
+app.use('/api/auth', require('../routes/auth'));
+app.use('/api/campaigns', require('../routes/campaigns'));
+app.use('/api/prospects', require('../routes/prospects'));
+app.use('/api/messages', require('../routes/messages'));
+app.use('/api/sequences', require('../routes/sequences'));
+app.use('/api/events', require('../routes/events'));
+app.use('/api/analytics', require('../routes/analytics'));
+app.use('/api/ai', require('../routes/ai'));
+
 // 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({
@@ -509,6 +178,5 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 🚨 IMPORTANT: no app.listen() for Vercel
-// Instead export the handler for Vercel
+// Export for Vercel
 module.exports = app;

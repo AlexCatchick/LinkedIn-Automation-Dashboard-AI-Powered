@@ -88,13 +88,16 @@ router.post('/register', async (req, res) => {
         );
 
         res.status(201).json({
-            token,
-            user: {
-                id: result.rows[0].id,
-                email: result.rows[0].email,
-                full_name: result.rows[0].full_name,
-                organization_id: result.rows[0].organization_id,
-                created_at: result.rows[0].created_at
+            success: true,
+            data: {
+                token,
+                user: {
+                    id: result.rows[0].id,
+                    email: result.rows[0].email,
+                    full_name: result.rows[0].full_name,
+                    organization_id: result.rows[0].organization_id,
+                    created_at: result.rows[0].created_at
+                }
             }
         });
 
@@ -157,13 +160,16 @@ router.post('/login', async (req, res) => {
         );
 
         res.json({
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name,
-                organization_id: user.organization_id,
-                created_at: user.created_at
+            success: true,
+            data: {
+                token,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.full_name,
+                    organization_id: user.organization_id,
+                    created_at: user.created_at
+                }
             }
         });
 
@@ -339,13 +345,16 @@ router.post('/demo-login', async (req, res) => {
         );
 
         res.json({
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name,
-                organization_id: user.organization_id,
-                created_at: user.created_at
+            success: true,
+            data: {
+                token,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.full_name,
+                    organization_id: user.organization_id,
+                    created_at: user.created_at
+                }
             }
         });
 
